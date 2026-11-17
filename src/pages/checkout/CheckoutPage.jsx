@@ -147,6 +147,11 @@ export function CheckoutPage({ cartItems, cart, loadCart }) {
   };
 
   const createOrder = async () => {
+    if (items.length === 0 || totalItemsCount === 0) {
+      alert("Your cart is empty. An order can't be placed with 0 items.");
+      return;
+    }
+
     try {
       await axios.post('/api/orders');
       if (loadCart) {

@@ -6,8 +6,9 @@ import './OrdersPage.css';
 import { Link } from 'react-router';
 import { formatMoney } from '../../utils/money';
 
-export function OrdersPage({ cart }) {
+export function OrdersPage({ cart, loadCart }) {
   const [orders, setOrders] = useState([]);
+  const [addedItems, setAddedItems] = useState({});
 
   useEffect(() => {
     const fetchOrdersData = async () => {
@@ -21,6 +22,26 @@ export function OrdersPage({ cart }) {
 
     fetchOrdersData();
   }, []);
+
+  const handleAddToCart = async (productId, itemKey) => {
+    try {
+      await axios.post('/api/cart-items', {
+        productId,
+        quantity: 1,
+      });
+
+      if (loadCart) {
+        await loadCart();
+      }
+
+      setAddedItems((prev) => ({ ...prev, [itemKey]: true }));
+      setTimeout(() => {
+        setAddedItems((prev) => ({ ...prev, [itemKey]: false }));
+      }, 1500);
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+    }
+  };
 
   const safeFormatMoney = (cents) => {
     const safeCents = typeof cents === 'number' && !Number.isNaN(cents) ? cents : 0;
@@ -81,6 +102,9 @@ export function OrdersPage({ cart }) {
                       orderProduct?.productId ||
                       `prod-${orderKey}-${productIndex}`;
 
+                    const itemKey = `${orderKey}-${productId}`;
+                    const isAdded = Boolean(addedItems[itemKey]);
+
                     return (
                       <Fragment key={productId}>
                         <div className="product-image-container">
@@ -100,13 +124,18 @@ export function OrdersPage({ cart }) {
                           <div className="product-quantity">
                             Quantity: {orderProduct?.quantity || 1}
                           </div>
-                          <button className="buy-again-button button-primary">
+                          <button
+                            className="buy-again-button button-primary"
+                            onClick={() => handleAddToCart(productId, itemKey)}
+                          >
                             <img
                               className="buy-again-icon"
-                              src="images/icons/buy-again.png"
+                              src="/images/icons/buy-again.png"
                               alt="Buy again"
                             />
-                            <span className="buy-again-message">Add to Cart</span>
+                            <span className="buy-again-message">
+                              {isAdded ? '✓ Added' : 'Add to Cart'}
+                            </span>
                           </button>
                         </div>
 
